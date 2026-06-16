@@ -199,16 +199,16 @@ def analytics(db: Session = Depends(get_db)) -> dict:
         },
     }
 
-
 @router.get("/alerts", response_model=list[AlertRead])
 def alerts(db: Session = Depends(get_db)) -> list[AlertRead]:
     rows = (
         db.query(ClimateAlert, District, State)
-        .join(District)
-        .join(State)
+        .join(District, ClimateAlert.district_id == District.id)
+        .join(State, District.state_id == State.id)
         .order_by(desc(ClimateAlert.issued_at))
         .all()
     )
+
     return [
         AlertRead(
             id=alert.id,
@@ -222,7 +222,6 @@ def alerts(db: Session = Depends(get_db)) -> list[AlertRead]:
         )
         for alert, district, state in rows
     ]
-
 
 @router.get("/reports/district/{district_id}.pdf")
 def district_pdf_report(district_id: int, db: Session = Depends(get_db)) -> StreamingResponse:

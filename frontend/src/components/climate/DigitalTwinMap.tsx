@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Layers, LocateFixed } from "lucide-react";
+import { Layers, LocateFixed, Search, X } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import type { District } from "@/lib/types";
 import { riskFill } from "@/lib/utils";
 
 const layerOptions = [
@@ -33,16 +34,235 @@ function colorForFeature(feature: GeoJSON.Feature, layer: string) {
   return "#2dd4bf";
 }
 
+// India bounding box for SVG map
+const INDIA_LON_MIN = 68;
+const INDIA_LON_MAX = 97;
+const INDIA_LAT_MIN = 8;
+const INDIA_LAT_MAX = 37;
+const SVG_W = 320;
+const SVG_H = 340;
+
+function lonToX(lon: number) {
+  return ((lon - INDIA_LON_MIN) / (INDIA_LON_MAX - INDIA_LON_MIN)) * SVG_W;
+}
+function latToY(lat: number) {
+  return ((INDIA_LAT_MAX - lat) / (INDIA_LAT_MAX - INDIA_LAT_MIN)) * SVG_H;
+}
+
+function RegionSelectorModal({
+  districts,
+  features,
+  onSelect,
+  onClose
+}: {
+  districts: District[];
+  features: GeoJSON.Feature[];
+  onSelect: (feature: GeoJSON.Feature) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const featureByDistrictId = useMemo(() => {
+    const map = new Map<number, GeoJSON.Feature>();
+    for (const f of features) {
+      const props = f.properties as Record<string, number | string>;
+      map.set(Number(props.district_id), f);
+    }
+    return map;
+  }, [features]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return districts;
+    const q = search.toLowerCase();
+    return districts.filter(
+      (d) =>
+        d.name.toLowerCase().includes(q) ||
+        (d.state_name ?? "").toLowerCase().includes(q)
+    );
+  }, [districts, search]);
+
+  const stateGroups = useMemo(() => {
+    const groups = new Map<string, District[]>();
+    for (const d of filtered) {
+      const state = d.state_name ?? "Unknown";
+      if (!groups.has(state)) groups.set(state, []);
+      groups.get(state)!.push(d);
+    }
+    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [filtered]);
+
+  function handleSelect(district: District) {
+    const feature = featureByDistrictId.get(district.id);
+    if (feature) {
+      onSelect(feature);
+      onClose();
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="glass-panel relative mx-4 flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-cyan-300/15 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Select Region</h2>
+            <p className="mt-0.5 text-xs text-slate-400">Click a district on the map or search by name</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-md border border-cyan-300/20 bg-white/5 text-slate-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* India SVG map */}
+          <div className="hidden shrink-0 border-r border-cyan-300/10 bg-slate-950/60 p-4 md:block">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-300/70">
+              India District Map
+            </p>
+            <svg
+              width={SVG_W}
+              height={SVG_H}
+              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+              className="rounded-md border border-cyan-300/10 bg-[#040d18]"
+            >
+              {/* Grid lines */}
+              {Array.from({ length: 6 }, (_, i) => (
+                <line
+                  key={`vl-${i}`}
+                  x1={(i / 5) * SVG_W}
+                  y1={0}
+                  x2={(i / 5) * SVG_W}
+                  y2={SVG_H}
+                  stroke="rgba(34,211,238,0.06)"
+                  strokeWidth={1}
+                />
+              ))}
+              {Array.from({ length: 6 }, (_, i) => (
+                <line
+                  key={`hl-${i}`}
+                  x1={0}
+                  y1={(i / 5) * SVG_H}
+                  x2={SVG_W}
+                  y2={(i / 5) * SVG_H}
+                  stroke="rgba(34,211,238,0.06)"
+                  strokeWidth={1}
+                />
+              ))}
+              {/* District dots */}
+              {districts.map((d) => {
+                const x = lonToX(d.centroid_lon);
+                const y = latToY(d.centroid_lat);
+                const isFiltered = filtered.some((f) => f.id === d.id);
+                return (
+                  <g key={d.id} onClick={() => handleSelect(d)} className="cursor-pointer">
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={isFiltered ? 10 : 7}
+                      fill={isFiltered ? "rgba(34,211,238,0.22)" : "rgba(148,163,184,0.08)"}
+                      stroke={isFiltered ? "#22d3ee" : "rgba(148,163,184,0.2)"}
+                      strokeWidth={1.5}
+                    />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={isFiltered ? 4 : 3}
+                      fill={isFiltered ? "#22d3ee" : "rgba(148,163,184,0.35)"}
+                    />
+                    {isFiltered && (
+                      <text
+                        x={x}
+                        y={y - 13}
+                        textAnchor="middle"
+                        fontSize={8}
+                        fill="#67e8f9"
+                        fontFamily="sans-serif"
+                      >
+                        {d.name}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Search + list */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Search box */}
+            <div className="border-b border-cyan-300/10 px-4 py-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search district or state..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-slate-950/50 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                />
+              </div>
+            </div>
+
+            {/* District list grouped by state */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {stateGroups.length === 0 ? (
+                <p className="mt-8 text-center text-sm text-slate-500">No districts match your search.</p>
+              ) : (
+                <div className="grid gap-4">
+                  {stateGroups.map(([state, stateDistricts]) => (
+                    <div key={state}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-cyan-300/70">
+                        {state}
+                      </p>
+                      <div className="grid gap-1">
+                        {stateDistricts.map((d) => (
+                          <button
+                            key={d.id}
+                            onClick={() => handleSelect(d)}
+                            className="flex items-center justify-between rounded-md border border-cyan-300/10 bg-white/[0.03] px-3 py-2.5 text-left text-sm text-slate-300 transition hover:border-cyan-300/30 hover:bg-cyan-400/10 hover:text-white"
+                          >
+                            <span className="font-medium">{d.name}</span>
+                            <span className="text-xs text-slate-500">
+                              {d.centroid_lat.toFixed(1)}°N, {d.centroid_lon.toFixed(1)}°E
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DigitalTwinMap({ compact = false }: { compact?: boolean }) {
   const mapNode = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [data, setData] = useState<GeoJSON.FeatureCollection | null>(null);
   const [layer, setLayer] = useState("flood_risk");
   const [selected, setSelected] = useState<GeoJSON.Feature | null>(null);
+  const [showSelector, setShowSelector] = useState(false);
+  const [allDistricts, setAllDistricts] = useState<District[]>([]);
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
     api.layers().then(setData).catch(() => setData(null));
+    api.districts().then(setAllDistricts).catch(() => undefined);
   }, []);
 
   const features = useMemo(() => data?.features ?? [], [data]);
@@ -171,7 +391,7 @@ export function DigitalTwinMap({ compact = false }: { compact?: boolean }) {
             </h3>
             <p className="text-sm text-cyan-100">{selectedProps.state ?? "National view"}</p>
           </div>
-          <Button size="icon" variant="outline" aria-label="Locate">
+          <Button size="icon" variant="outline" aria-label="Locate" onClick={() => setShowSelector(true)}>
             <LocateFixed className="h-4 w-4" />
           </Button>
         </div>
@@ -205,6 +425,15 @@ export function DigitalTwinMap({ compact = false }: { compact?: boolean }) {
           India-WRIS, and CPCB without changing the map contract.
         </div>
       </Card>
+
+      {showSelector && (
+        <RegionSelectorModal
+          districts={allDistricts}
+          features={features}
+          onSelect={(feature) => setSelected(feature)}
+          onClose={() => setShowSelector(false)}
+        />
+      )}
     </div>
   );
 }
