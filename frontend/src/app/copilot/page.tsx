@@ -92,6 +92,7 @@ export default function CopilotPage() {
           setTimeout(() => router.push(`/compare?districtA=${action.districtA}&districtB=${action.districtB}`), 1200);
         } else if (action.state1 && action.state2) {
           triggerToast(`Command executed: Navigating to comparison module...`);
+          // Note: compare screen takes district selectors, we can pass default centroid values or redirect to compare general
           setTimeout(() => router.push(`/compare`), 1200);
         }
         break;
@@ -142,12 +143,9 @@ export default function CopilotPage() {
       };
 
       setMessages((prev) => [...prev, botMsg]);
-      
-      // Execute any returned controller actions
-      if (response.action) {
-        executeAction(response.action);
-      }
+      // Note: We do not automatically execute actions to keep the user on the Copilot page.
     } catch (err) {
+      // Graceful fallback to avoid technical error displays
       const fallbackMsg: ChatMessage = {
         id: "bot-error-" + Date.now(),
         sender: "bot",
@@ -268,10 +266,13 @@ export default function CopilotPage() {
                         ? "border-slate-800 bg-slate-900/60 text-slate-200 rounded-tr-none" 
                         : "border-cyan-300/10 bg-slate-950/50 text-slate-300 rounded-tl-none space-y-4"
                     }`}>
+                      {/* Message content */}
                       <p>{msg.text}</p>
 
+                      {/* Bot response details */}
                       {!isUser && msg.data && (
                         <div className="space-y-4 pt-2 border-t border-cyan-300/5">
+                          {/* Explainable AI breakdown details */}
                           {msg.data.explainable_risk && (
                             <div className="rounded-lg border border-amber-500/20 bg-amber-400/5 p-3.5 space-y-2">
                               <div className="flex justify-between items-center text-xs font-bold text-amber-400">
@@ -300,6 +301,7 @@ export default function CopilotPage() {
                             </div>
                           )}
 
+                          {/* Risk summary text */}
                           {msg.data.risk_analysis && (
                             <div>
                               <h4 className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 mb-1">Risk Analysis Matrix</h4>
@@ -307,6 +309,7 @@ export default function CopilotPage() {
                             </div>
                           )}
 
+                          {/* Action advice cards */}
                           {msg.data.recommended_actions && msg.data.recommended_actions.length > 0 && (
                             <div>
                               <h4 className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 mb-2">Government Action Protocol</h4>
@@ -333,6 +336,7 @@ export default function CopilotPage() {
                             </div>
                           )}
 
+                          {/* Chart visual representation */}
                           {msg.data.chart && msg.data.chart.data && msg.data.chart.data.length > 0 && (
                             <div className="pt-2 border-t border-cyan-300/5">
                               <h4 className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 mb-3">Vulnerability Rankings Spectrum</h4>
@@ -342,6 +346,7 @@ export default function CopilotPage() {
                             </div>
                           )}
 
+                          {/* Bot Message Control Actions */}
                           <div className="flex items-center justify-between border-t border-cyan-300/5 pt-2.5 mt-2">
                             <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">
                               Confidence Scale: High
@@ -358,6 +363,7 @@ export default function CopilotPage() {
                             </div>
                           </div>
 
+                          {/* Suggested follow-up prompt suggestions */}
                           {msg.data.suggestions && msg.data.suggestions.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-2">
                               {msg.data.suggestions.map((sug) => (
@@ -379,6 +385,7 @@ export default function CopilotPage() {
               })
             )}
 
+            {/* Chat Typing Loading Indicator */}
             {loading && (
               <div className="flex gap-3 justify-start animate-fade-in">
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
@@ -396,6 +403,7 @@ export default function CopilotPage() {
             <div ref={chatEndRef} />
           </CardContent>
 
+          {/* Form input bottom row */}
           <form onSubmit={onSubmit} className="p-4 border-t border-cyan-300/10 flex gap-2 bg-slate-950/20">
             <Input
               value={prompt}
