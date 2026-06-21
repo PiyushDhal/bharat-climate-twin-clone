@@ -236,12 +236,12 @@ export default function ReportsPage() {
             reportType: "flood_assessment",
             stateName: "Assam",
             districtName: "Cachar",
-            year: 2025,
+            year: 2026,
             sector: "infrastructure",
             disasterType: "flood",
             riskLevelFilter: "critical",
             dateCompiled: "10 June 2026",
-            refNo: "BCT-REP-CAC-2025",
+            refNo: "BCT-REP-CAC-2026",
             isComparison: false
           }
         ];
@@ -779,7 +779,7 @@ export default function ReportsPage() {
                   onChange={(e) => setYear(Number(e.target.value))}
                   className="w-full bg-slate-950/70 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                 >
-                  {[2020, 2025, 2030, 2040, 2050].map((y) => (
+                  {[2020, 2026, 2030, 2040, 2050].map((y) => (
                     <option key={y} value={y}>{y} AD Horizon</option>
                   ))}
                 </select>

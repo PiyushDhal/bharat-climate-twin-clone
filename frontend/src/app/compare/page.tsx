@@ -12,7 +12,7 @@ import { riskColor } from "@/lib/utils";
 export default function ComparePage() {
   const [districtIdA, setDistrictIdA] = useState<number>(101); // Mumbai
   const [districtIdB, setDistrictIdB] = useState<number>(501); // Kutch
-  const [year, setYear] = useState<number>(2025);
+  const [year, setYear] = useState<number>(2026);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -82,7 +82,7 @@ export default function ComparePage() {
             onChange={(e) => setYear(Number(e.target.value))}
             className="bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-cyan-200 focus:outline-none"
           >
-            {[2020, 2025, 2030, 2040, 2050].map((y) => (
+            {[2020, 2026, 2030, 2040, 2050].map((y) => (
               <option key={y} value={y}>{y} AD</option>
             ))}
           </select>

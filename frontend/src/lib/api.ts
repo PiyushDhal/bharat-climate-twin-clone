@@ -69,7 +69,7 @@ async function withMockFallback<T>(fetcher: () => Promise<T>, fallback: () => T)
 }
 
 function mockRisk(districtId: number): RiskScore {
-  const rankings = generateRankings(2025);
+  const rankings = generateRankings(2026);
   const r = rankings.find((x) => x.district_id === districtId) ?? rankings[0];
   return { ...r, valid_on: new Date().toISOString(), drivers: {} };
 }
@@ -92,7 +92,7 @@ function mockLayers(): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
     features: MOCK_DISTRICTS.map((d) => {
-      const r = generateRankings(2025).find((x) => x.district_id === d.id);
+      const r = generateRankings(2026).find((x) => x.district_id === d.id);
       return {
         type: "Feature" as const,
         geometry: {
@@ -158,7 +158,7 @@ export const api = {
   rankings: (limit = 10) =>
     withMockFallback(
       () => apiFetch<Ranking[]>(`/climate/rankings?limit=${limit}`),
-      () => generateRankings(2025).slice(0, limit)
+      () => generateRankings(2026).slice(0, limit)
     ),
 
   analytics: () => withMockFallback(() => apiFetch<Analytics>("/climate/analytics"), () => generateAnalytics()),

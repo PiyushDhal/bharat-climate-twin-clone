@@ -11,7 +11,7 @@ import { riskColor } from "@/lib/utils";
 
 export default function SustainabilityPage() {
   const [districtId, setDistrictId] = useState<number>(101);
-  const [year, setYear] = useState<number>(2025);
+  const [year, setYear] = useState<number>(2026);
 
   const district = MOCK_DISTRICTS.find((d) => d.id === districtId) || MOCK_DISTRICTS[0];
   const rankings = useMemo(() => generateRankings(year), [year]);
@@ -102,7 +102,7 @@ export default function SustainabilityPage() {
             onChange={(e) => setYear(Number(e.target.value))}
             className="bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:outline-none text-xs"
           >
-            {[2020, 2025, 2030, 2040, 2050].map((y) => (
+            {[2020, 2026, 2030, 2040, 2050].map((y) => (
               <option key={y} value={y}>{y} AD</option>
             ))}
           </select>

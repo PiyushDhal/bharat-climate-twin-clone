@@ -42,7 +42,7 @@ export const MOCK_DISTRICTS: District[] = [
 ];
 
 // ─── History generator ───────────────────────────────────────────────
-export function generateHistory(districtId: number, year: number = 2025): ClimateObservation[] {
+export function generateHistory(districtId: number, year: number = 2026): ClimateObservation[] {
   const observations: ClimateObservation[] = [];
   const isWet = [201, 202, 203, 401, 701, 702].includes(districtId);
   const isHot = [301, 302, 303, 501].includes(districtId);
@@ -81,7 +81,7 @@ export function generateHistory(districtId: number, year: number = 2025): Climat
 }
 
 // ─── Rankings generator ──────────────────────────────────────────────
-export function generateRankings(year: number = 2025): Ranking[] {
+export function generateRankings(year: number = 2026): Ranking[] {
   return MOCK_DISTRICTS.map((d) => {
     const isWet = [101, 201, 202, 203, 401, 701, 702].includes(d.id);
     const isDry = [301, 302, 303, 501].includes(d.id);
@@ -310,7 +310,7 @@ export function getCopilotResponse(
         { district: "Sunderbans", risk: q.includes("flood") ? 88 : 48 }
       ]
     },
-    districts: generateRankings(2025).slice(0, 6),
+    districts: generateRankings(2026).slice(0, 6),
     action,
     suggestions,
     explainable_risk,
@@ -319,7 +319,7 @@ export function getCopilotResponse(
 }
 
 // ─── Analytics generator ─────────────────────────────────────────────
-export function generateAnalytics(year: number = 2025): Analytics {
+export function generateAnalytics(year: number = 2026): Analytics {
   const historyData = generateHistory(101, year);
   const trendPoints = historyData.map((h, i) => ({
     date: `Month ${i + 1}`,

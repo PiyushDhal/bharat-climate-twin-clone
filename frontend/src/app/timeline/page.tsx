@@ -44,7 +44,7 @@ const timelineData: TimelineEvent[] = [
     icon: CloudRain
   },
   {
-    year: 2025,
+    year: 2026,
     label: "Baseline Transition Year",
     type: "current",
     description: "Stabilized monsoon indicators with localized temperature rises. Current ground telemetry aligns with long-term climate baselines.",
@@ -91,7 +91,7 @@ const timelineData: TimelineEvent[] = [
 
 export default function TimelinePage() {
   const [districtId, setDistrictId] = useState<number>(101);
-  const [activeEventIndex, setActiveEventIndex] = useState<number>(2); // 2025 selected by default
+  const [activeEventIndex, setActiveEventIndex] = useState<number>(2); // 2026 selected by default
 
   const district = MOCK_DISTRICTS.find((d) => d.id === districtId) || MOCK_DISTRICTS[0];
   const activeEvent = timelineData[activeEventIndex];
